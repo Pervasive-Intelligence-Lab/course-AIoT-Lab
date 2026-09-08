@@ -1,6 +1,6 @@
 # CSCI 4900/6900 Course Projects
 
-This repository contains the hands-on labs for **CSCI 4900/6900**.
+This repository contains the hands-on labs and supporting demos for **CSCI 4900/6900**.
 
 Throughout the course, we will use the **M5Stack AtomS3R-M12** as our primary AIoT development platform. The labs will introduce sensing, embedded programming, wireless networking, computer vision, edge AI, and intelligent agents.
 
@@ -173,12 +173,34 @@ sense → understand → reason → communicate → act
 
 ---
 
+## Course Demos
+
+### AtomS3R-M12 Realtime IMU Dashboard
+
+📁 [`Demo-AtomS3R-M12`](Demo-AtomS3R-M12)
+
+This demo streams the board's accelerometer, gyroscope, and magnetometer data over Wi-Fi to an interactive 3D browser dashboard. It includes two equivalent firmware versions:
+
+* a complete PlatformIO project configured for the AtomS3R-M12's 8 MB Flash and 8 MB OPI PSRAM
+* an Arduino IDE `.ino` sketch for the `M5AtomS3R` board definition
+
+The Python bridge uses only the standard library, and the browser assets are included in the repository.
+
+---
+
 ## Repository Structure
 
 ```text
 course-AIoT-Lab/
 │
 ├── README.md
+│
+├── Demo-AtomS3R-M12/
+│   ├── README.md
+│   ├── platformio/
+│   ├── ino/
+│   ├── backend/
+│   └── web/
 │
 ├── Lab-0-IMU-serial/
 │   ├── README.md
@@ -194,9 +216,9 @@ course-AIoT-Lab/
     └── README.md
 ```
 
-Each lab directory contains its own `README.md` with detailed instructions.
+Each lab and demo directory contains its own `README.md` with detailed instructions.
 
-Please read the corresponding lab README before starting each lab.
+Please read the corresponding README before starting a lab or demo.
 
 ---
 

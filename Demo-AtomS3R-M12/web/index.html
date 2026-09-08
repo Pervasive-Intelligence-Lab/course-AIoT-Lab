@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AtomS3R-M12 · IMU Live</title>
+<style>
+  :root {
+    --bg: #0b0f19; --panel: #111827cc; --line: #1f2937; --text: #e5e7eb; --muted: #8b95a7;
+    --x: #f87171; --y: #4ade80; --z: #60a5fa;
+    --accel: #22d3ee; --gyro: #fbbf24; --mag: #e879f9;
+    --ok: #34d399; --bad: #f87171;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+  body { display: grid; grid-template-rows: 52px 1fr; }
+
+  header {
+    display: flex; align-items: center; gap: 12px; padding: 0 18px;
+    border-bottom: 1px solid var(--line); background: #0d1220;
+  }
+  header h1 { font-size: 15px; font-weight: 600; letter-spacing: .02em; margin: 0; white-space: nowrap; }
+  header h1 span { color: var(--muted); font-weight: 400; }
+  .spacer { flex: 1; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+    background: #172033; border: 1px solid var(--line); font-size: 12px; color: var(--muted); white-space: nowrap;
+  }
+  .chip b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chip.warn { border-color: #6b4d12; color: var(--gyro); }
+  .chip.warn b { color: var(--gyro); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 8px var(--bad); }
+  .dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .dot.warn { background: var(--gyro); box-shadow: 0 0 8px var(--gyro); }
+  button {
+    background: #172033; color: var(--text); border: 1px solid #2b3648; border-radius: 8px;
+    padding: 6px 12px; font-size: 12px; cursor: pointer; white-space: nowrap;
+  }
+  button:hover { background: #1f2a40; }
+  button.active { border-color: var(--mag); color: var(--mag); }
+  label.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 372px; min-height: 0; }
+  #view { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: radial-gradient(ellipse at 50% 35%, #172038 0%, #0b0f19 70%); }
+  #view canvas { display: block; width: 100%; height: 100%; }   /* drawing buffer is sized separately (dpr) */
+  #vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; box-shadow: inset 0 0 90px var(--accel); transition: opacity .1s; }
+  #legend {
+    position: absolute; left: 14px; bottom: 12px; display: flex; gap: 16px; font-size: 12px; color: var(--muted);
+    pointer-events: none; flex-wrap: wrap; max-width: 70%;
+  }
+  #legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+  #overlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column;
+    gap: 8px; background: #0b0f19aa; backdrop-filter: blur(2px); font-size: 14px; color: var(--muted);
+    transition: opacity .3s; pointer-events: none;
+  }
+  #overlay.hidden { opacity: 0; visibility: hidden; }
+  #overlay b { color: var(--text); font-size: 18px; }
+  #hint { position: absolute; right: 14px; top: 12px; font-size: 11px; color: var(--muted); pointer-events: none; }
+
+  aside { border-left: 1px solid var(--line); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .card h2 {
+    margin: 0 0 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .card h2 small { text-transform: none; letter-spacing: 0; font-weight: 400; }
+  .card.accel h2 { color: var(--accel); } .card.gyro h2 { color: var(--gyro); } .card.mag h2 { color: var(--mag); }
+  .vals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; font-variant-numeric: tabular-nums; margin-top: 8px; }
+  .vals div { background: #0d1220; border-radius: 6px; padding: 4px 6px; }
+  .vals span { display: block; font-size: 9px; color: var(--muted); }
+  .vals b { font-size: 12px; font-weight: 500; font-family: "JetBrains Mono", Consolas, monospace; color: var(--muted); }
+  .vals .ax b { color: var(--x); } .vals .ay b { color: var(--y); } .vals .az b { color: var(--z); }
+  canvas.gauge { width: 100%; height: 110px; display: block; border-radius: 8px; background: #0d1220; }
+  .summary { font-size: 12px; margin-top: 8px; color: var(--text); font-weight: 600; }
+
+  #compassWrap { display: flex; gap: 12px; align-items: center; }
+  #compass { width: 150px; height: 150px; flex: none; }
+  .euler { flex: 1; display: grid; gap: 6px; }
+  .euler div { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 8px; background: #0d1220; border-radius: 8px; }
+  .euler b { font-family: "JetBrains Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .note { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.4; }
+  .note.warn { color: var(--gyro); }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; }
+    aside { border-left: 0; border-top: 1px solid var(--line); }
+    header h1 span { display: none; }
+    header { gap: 8px; padding: 0 10px; overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>AtomS3R-M12 <span>· BMI270 + BMM150 live</span></h1>
+  <span class="chip"><i class="dot" id="espDot"></i> board <b id="espState">—</b></span>
+  <span class="chip">rate <b id="rate">0</b> Hz</span>
+  <span class="chip">rssi <b id="rssi">—</b> dBm</span>
+  <span class="chip">loss <b id="loss">0</b> %</span>
+  <span class="chip">gap <b id="gap">0</b> ms</span>
+  <div class="spacer"></div>
+  <label class="toggle"><input type="checkbox" id="useMag" checked> use magnetometer</label>
+  <button id="btnCal" title="Rotate the board through all orientations for ~15 s, then click again">Calibrate mag</button>
+  <button id="btnZero" title="Make the current heading read 0°">Zero heading</button>
+  <button id="btnReset" title="Re-initialise the orientation filter">Reset</button>
+</header>
+
+<main>
+  <section id="view">
+    <div id="vignette"></div>
+    <div id="hint">drag to orbit · wheel to zoom</div>
+    <div id="legend">
+      <span><i style="background:var(--accel)"></i>acceleration — board springs from home (ring = 1 g)</span>
+      <span><i style="background:var(--gyro)"></i>rotation — ring lies in the spin plane</span>
+      <span><i style="background:var(--mag)"></i>magnetic field — dip needle to N</span>
+    </div>
+    <div id="overlay"><b>Waiting for board…</b><span id="overlayMsg">backend is connecting to the ESP32</span></div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <h2>Orientation <small id="fusionMode">9-DOF Madgwick</small></h2>
+      <div id="compassWrap">
+        <canvas id="compass" width="300" height="300"></canvas>
+        <div class="euler">
+          <div><span>heading</span><b id="heading">—</b></div>
+          <div><span>roll</span><b id="roll">—</b></div>
+          <div><span>pitch</span><b id="pitch">—</b></div>
+          <div><span>yaw</span><b id="yaw">—</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card accel">
+      <h2>Linear acceleration <small>g · gravity removed</small></h2>
+      <canvas class="gauge" id="gaugeA" aria-label="Acceleration bullseye, vertical g and peak"></canvas>
+      <div class="summary" id="accSumm">Still</div>
+      <div class="vals" id="accelVals">
+        <div class="ax"><span>x</span><b>—</b></div><div class="ay"><span>y</span><b>—</b></div>
+        <div class="az"><span>z</span><b>—</b></div><div><span>|a|</span><b>—</b></div>
+      </div>
+    </div>
+
+    <div class="card gyro">
+      <h2>Angular velocity <small>°/s</small></h2>
+      <canvas class="gauge" id="gaugeG" aria-label="Rotation rate arc, axis share and turns counter"></canvas>
+      <div class="summary" id="gyroSumm">Still</div>
+      <div class="vals" id="gyroVals">
+        <div class="ax"><span>x</span><b>—</b></div><div class="ay"><span>y</span><b>—</b></div>
+        <div class="az"><span>z</span><b>—</b></div><div><span>|ω|</span><b>—</b></div>
+      </div>
+    </div>
+
+    <div class="card mag">
+      <h2>Magnetic field <small>µT</small></h2>
+      <canvas class="gauge" id="gaugeM" aria-label="Dip angle, field strength and calibration health"></canvas>
+      <div class="summary" id="magSumm">Uncalibrated</div>
+      <div class="vals" id="magVals">
+        <div class="ax"><span>x</span><b>—</b></div><div class="ay"><span>y</span><b>—</b></div>
+        <div class="az"><span>z</span><b>—</b></div><div><span>|B|</span><b>—</b></div>
+      </div>
+      <div class="note" id="magNote">Not calibrated — heading may be off. Click <em>Calibrate mag</em> and tumble the board.</div>
+    </div>
+  </aside>
+</main>
+
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

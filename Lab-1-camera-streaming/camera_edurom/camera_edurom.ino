@@ -13,8 +13,13 @@
 #include <WiFi.h>
 #include "esp_camera.h"
 
-#define USE_ATOMS3R_CAM
-// #define USE_ATOMS3R_M12
+// The course hardware is AtomS3R-M12 (OV3660). Enable exactly one model.
+// #define USE_ATOMS3R_CAM
+#define USE_ATOMS3R_M12
+
+#if defined(USE_ATOMS3R_CAM) == defined(USE_ATOMS3R_M12)
+#error "Enable exactly one camera model: USE_ATOMS3R_CAM or USE_ATOMS3R_M12"
+#endif
 
 #define STA_MODE
 // #define AP_MODE

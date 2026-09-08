@@ -1,0 +1,14 @@
+# Local build and editor state
+platformio/.pio/
+platformio/.vscode/
+platformio/compile_commands.json
+
+# Local credentials (copy from the tracked examples)
+platformio/include/secrets.h
+ino/AtomS3R_M12_IMU_Dashboard/secrets.h
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+.DS_Store

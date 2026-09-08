@@ -6,17 +6,17 @@ This repository contains the labs for the AIoT course. Start with [Lab 1: Camera
 
 ### Goal
 
-In this lab you will program an M5Stack AtomS3R-CAM to:
+In this lab you will program an M5Stack AtomS3R-M12 to:
 
 1. Initialize its camera.
 2. Connect to Wi-Fi using WPA2-Enterprise (`eduroam`).
 3. Host a live camera stream that you can open in a web browser.
 
-The lab uses the [M5Stack AtomS3R-CAM Arduino guide](https://docs.m5stack.com/en/arduino/m5atoms3r-cam/program) as its hardware and software reference.
+The lab uses the [M5Stack AtomS3R-M12 Arduino guide](https://docs.m5stack.com/en/arduino/m5atoms3r-m12/program) as its hardware and software reference.
 
 ### What you need
 
-- M5Stack AtomS3R-CAM
+- M5Stack AtomS3R-M12
 - USB-C data cable
 - Computer with administrator rights to install Arduino software
 - Wi-Fi access. The provided sketch is configured for `eduroam`.
@@ -37,7 +37,7 @@ No external wiring is required: the camera is built into the device.
 4. Search for `M5Stack` and install the M5Stack board package.
 5. Select **Tools > Board > M5Stack > M5AtomS3R**.
 
-The board selection is important. The AtomS3R-CAM uses the `M5AtomS3R` board definition.
+The board selection is important. The AtomS3R-M12 uses the `M5AtomS3R` board definition.
 
 ### 3. Install the required library
 
@@ -52,19 +52,19 @@ The camera example uses the ESP32 camera support included by the M5Stack/ESP32 b
 
 Open this file in Arduino IDE:
 
-[`Lab-1-camera-streaming/camera_edurom/camera_edurom.ino`](Lab-1-camera-streaming/camera_edurom/camera_edurom.ino)
+[`camera_edurom/camera_edurom.ino`](camera_edurom/camera_edurom.ino)
 
 Keep these settings unchanged:
 
 ```cpp
-#define USE_ATOMS3R_CAM
-// #define USE_ATOMS3R_M12
+// #define USE_ATOMS3R_CAM
+#define USE_ATOMS3R_M12
 
 #define STA_MODE
 // #define AP_MODE
 ```
 
-They select the AtomS3R-CAM camera and Wi-Fi station mode. The `M12` option is for a different camera model and should remain commented out.
+They select the AtomS3R-M12's OV3660 camera and Wi-Fi station mode. The `CAM` option targets the older GC0308-based AtomS3R-CAM and should remain commented out for the course hardware. Enable exactly one camera model.
 
 ### 5. Enter your Wi-Fi credentials
 
@@ -88,7 +88,7 @@ Do not commit or share a sketch containing your real password. The repository sh
 
 ### 6. Put the board into download mode
 
-1. Connect the AtomS3R-CAM to your computer with the USB-C data cable.
+1. Connect the AtomS3R-M12 to your computer with the USB-C data cable.
 2. Press and hold the device reset button for about two seconds.
 3. Release it when the internal green LED turns on.
 
@@ -96,7 +96,7 @@ The green LED turns off after release. This indicates that the board is waiting 
 
 ### 7. Select the USB port
 
-In Arduino IDE, open **Tools > Port** and select the port belonging to the AtomS3R-CAM. On macOS it commonly appears as a device beginning with `/dev/cu.`.
+In Arduino IDE, open **Tools > Port** and select the port belonging to the AtomS3R-M12. On macOS it commonly appears as a device beginning with `/dev/cu.`.
 
 If no port appears, try the following:
 
@@ -149,7 +149,7 @@ You have completed Lab 1 when all of the following are true:
 
 | Symptom | Likely cause | What to try |
 | --- | --- | --- |
-| `Camera Init Fail` | Wrong board or camera option selected | Select `M5AtomS3R` and keep `USE_ATOMS3R_CAM` enabled. |
+| `Camera Init Fail` | Wrong board or camera option selected | Select `M5AtomS3R` and keep `USE_ATOMS3R_M12` enabled. |
 | No serial port | Cable, connection, or download-mode issue | Use a data cable and hold reset for about two seconds. |
 | Wi-Fi timeout | Incorrect credentials or unavailable eduroam | Recheck `identity`, `username`, and `password`; confirm that your computer can join eduroam. |
 | IP address does not appear | The board did not finish connecting | Briefly press reset and watch the Serial Monitor at 115200 baud. |
@@ -166,7 +166,7 @@ Submit the items required by your instructor. Unless told otherwise, keep these 
 
 ### References
 
-- [M5Stack AtomS3R-CAM Arduino compilation and upload guide](https://docs.m5stack.com/en/arduino/m5atoms3r-cam/program)
+- [M5Stack AtomS3R-M12 Arduino compilation and upload guide](https://docs.m5stack.com/en/arduino/m5atoms3r-m12/program)
 - [Arduino IDE installation](https://docs.m5stack.com/en/arduino/arduino_ide)
 - [M5Stack board-manager setup](https://docs.m5stack.com/en/arduino/arduino_board)
 - [M5Stack library installation](https://docs.m5stack.com/en/arduino/arduino_library)
