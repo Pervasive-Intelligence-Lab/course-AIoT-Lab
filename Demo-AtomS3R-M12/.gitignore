@@ -1,10 +1,7 @@
-# Local build and editor state
-platformio/.pio/
-platformio/.vscode/
-platformio/compile_commands.json
+# Local Arduino build output
+ino/AtomS3R_M12_IMU_Dashboard/build/
 
-# Local credentials (copy from the tracked examples)
-platformio/include/secrets.h
+# Local credentials (copy from the tracked example)
 ino/AtomS3R_M12_IMU_Dashboard/secrets.h
 
 # Python cache files

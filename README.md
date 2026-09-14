@@ -179,10 +179,7 @@ sense → understand → reason → communicate → act
 
 📁 [`Demo-AtomS3R-M12`](Demo-AtomS3R-M12)
 
-This demo streams the board's accelerometer, gyroscope, and magnetometer data over Wi-Fi to an interactive 3D browser dashboard. It includes two equivalent firmware versions:
-
-* a complete PlatformIO project configured for the AtomS3R-M12's 8 MB Flash and 8 MB OPI PSRAM
-* an Arduino IDE `.ino` sketch for the `M5AtomS3R` board definition
+This demo streams the board's accelerometer, gyroscope, and magnetometer data over Wi-Fi to an interactive 3D browser dashboard. Its firmware is a single Arduino `.ino` sketch for the `M5AtomS3R` board definition, with 8 MB Flash and 8 MB OPI PSRAM. Build and upload it with Arduino IDE; the demo README walks through Wi-Fi credentials, flashing, and opening the dashboard.
 
 The Python bridge uses only the standard library, and the browser assets are included in the repository.
 
@@ -197,7 +194,6 @@ course-AIoT-Lab/
 │
 ├── Demo-AtomS3R-M12/
 │   ├── README.md
-│   ├── platformio/
 │   ├── ino/
 │   ├── backend/
 │   └── web/
