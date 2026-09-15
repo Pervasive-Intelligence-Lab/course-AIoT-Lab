@@ -83,6 +83,8 @@ Before moving on, make sure that:
 
 If the board cannot be detected, first check that you are using a **USB-C data cable**, not a charging-only cable.
 
+If an Apple Silicon Mac reports `ctags: bad CPU type in executable` during compilation, follow the [command-line ctags repair guide](Lab-3-CSI-serial/README.md#5-fix-arduino-ctags-on-apple-silicon-macos).
+
 ---
 
 ## Course Labs
@@ -174,6 +176,12 @@ sense → understand → reason → communicate → act
 ---
 
 ## Course Demos
+
+### AtomS3R-M12 Wi-Fi CSI over USB Serial
+
+📁 [`Lab-3-CSI-serial`](Lab-3-CSI-serial)
+
+An Arduino `.ino` demo that joins a 2.4 GHz access point in STA mode, pings the gateway to generate receive traffic, captures Wi-Fi CSI on the ESP32-S3, and streams raw CSI with packet metadata over USB serial as CSV. Includes a Python serial plotter for all CSI pairs (amplitude, phase, I/Q, history heatmaps, and RSSI), optional CSV recording, setup instructions, and troubleshooting.
 
 ### AtomS3R-M12 Realtime IMU Dashboard
 

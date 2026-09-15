@@ -1,0 +1,4 @@
+secrets.h
+.venv/
+__pycache__/
+captures/

@@ -67,7 +67,7 @@ def draw_sphere():
 
 def draw_pointer():
 
-    # 指针从球心指向球外
+    # Draw the pointer from the sphere center outward.
     glLineWidth(8)
 
     glColor3f(1.0, 0.1, 0.1)
@@ -79,7 +79,7 @@ def draw_pointer():
 
     glEnd()
 
-    # 箭头
+    # Draw the arrowhead.
     glPushMatrix()
 
     glTranslatef(0, 0, 2.5)
