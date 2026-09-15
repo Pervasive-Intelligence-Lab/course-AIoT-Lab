@@ -2,7 +2,8 @@
 //
 //   BMI270 (accel+gyro) + BMM150 (mag)  --M5Unified-->  JSON datagrams  --UDP-->  backend/server.py
 //
-// The board joins eduroam (WPA2-Enterprise / PEAP) and listens on UDP STREAM_PORT.
+// The board joins eduroam (WPA2-Enterprise / PEAP) or ordinary Wi-Fi (WPA2-PSK)
+// as configured in secrets.h, and listens on UDP STREAM_PORT.
 // The PC backend sends a small "hello" datagram once a second; the board streams one
 // JSON sample per datagram back to whoever said hello last (SAMPLE_HZ per second) and
 // stops HELLO_TIMEOUT_MS after the last hello.
@@ -31,7 +32,8 @@ static uint32_t lastHelloMs = 0;
 
 // ---------------------------------------------------------------- Wi-Fi ----
 
-// Same flow as the course example (camera_edurom.ino): WPA2-Enterprise / PEAP.
+// Select the commented configuration example in secrets.h:
+// EAP_USERNAME nonempty = eduroam / PEAP; empty = ordinary Wi-Fi / WPA2-PSK.
 static bool connectWiFi() {
   WiFi.mode(WIFI_STA);
   WiFi.disconnect(true);
@@ -39,11 +41,13 @@ static bool connectWiFi() {
   WiFi.setSleep(false);  // modem sleep adds 100+ ms of latency bursts
 
   if (EAP_USERNAME[0]) {
+    // eduroam: use the identity, username, and password for enterprise authentication.
     Serial.printf("\n[wifi] connecting to %s (WPA2-Enterprise/PEAP) as %s ...\n", WIFI_SSID, EAP_USERNAME);
     // Optional CA pinning: without it the PEAP tunnel accepts any RADIUS server certificate.
     const char* ca = EAP_CA_CERT[0] ? EAP_CA_CERT : nullptr;
     WiFi.begin(WIFI_SSID, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD, ca);
-  } else {  // plain WPA2-PSK network (phone hotspot / home router) for testing off campus
+  } else {
+    // Ordinary Wi-Fi: set EAP_USERNAME to ""; only WIFI_SSID and WIFI_PASSWORD are used.
     Serial.printf("\n[wifi] connecting to %s (WPA2-PSK) ...\n", WIFI_SSID);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   }

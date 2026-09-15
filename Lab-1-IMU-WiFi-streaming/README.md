@@ -30,7 +30,9 @@ https://static-cdn.m5stack.com/resource/arduino/package_m5stack_index.json
 
 ## 2. Enter your own Wi-Fi credentials
 
-In [`ino/AtomS3R_M12_IMU_Dashboard/`](ino/AtomS3R_M12_IMU_Dashboard/), **copy** `secrets.example.h` to `secrets.h`. Edit these lines in the copy, leaving the other settings in place:
+In [`ino/AtomS3R_M12_IMU_Dashboard/`](ino/AtomS3R_M12_IMU_Dashboard/), **copy** `secrets.example.h` to `secrets.h`. Choose one of the two configuration blocks in that file:
+
+**Option A — eduroam (default):** leave Option A enabled and fill in your credentials:
 
 ```cpp
 #define WIFI_SSID      "eduroam"
@@ -43,7 +45,9 @@ Use your own UGA MyID in both identity fields. **Keep `secrets.h` private:** it 
 
 `EAP_CA_CERT` accepts your university's RADIUS CA certificate; leaving it empty disables server certificate verification.
 
-For a 2.4 GHz hotspot instead, set `WIFI_SSID` and `WIFI_PASSWORD`, and set `EAP_USERNAME` to `""`.
+**Option B — ordinary Wi-Fi (2.4 GHz home router or phone hotspot):** comment out all five `#define` lines in Option A and uncomment all five in Option B. Fill in `WIFI_SSID` and `WIFI_PASSWORD`, and keep `EAP_USERNAME` as `""` to select ordinary Wi-Fi. Leave the shared `EAP_CA_CERT` definition in place; this mode ignores it.
+
+Only one option should be uncommented at a time. Keep your computer and board on the same reachable local network.
 
 ## 3. Compile and upload
 
