@@ -64,6 +64,14 @@ Open **Tools > Serial Monitor**, set the baud rate to `115200`, and confirm that
 
 ## 3. Install the Python dependencies
 
+The imports used by the visualization programs come from these packages:
+
+| Python import | Package to install |
+| --- | --- |
+| `serial` | `pyserial` |
+| `pygame` and `pygame.locals` | `pygame` |
+| `OpenGL.GL` and `OpenGL.GLU` | `PyOpenGL` |
+
 Open a terminal and enter the lab directory:
 
 ```bash

@@ -12,7 +12,7 @@ from OpenGL.GLU import *
 # Serial
 # =========================
 
-SERIAL_PORT = "/dev/cu.usbmodem31101"   # Mac: to check the serial port, run `ls /dev/cu.*` in terminal
+SERIAL_PORT = "/dev/cu.usbmodem3101"   # Mac: to check the serial port, run `ls /dev/cu.*` in terminal
 # Windows example: "COM5"
 # Mac example: "/dev/cu.usbmodem31101"
 BAUD_RATE = 115200
