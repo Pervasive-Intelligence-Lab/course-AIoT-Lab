@@ -17,8 +17,8 @@ CSI flows from the **board to the computer** over serial. Uploading the Arduino 
 
 1. Install Arduino IDE and the M5Stack board package using the [official M5Stack tutorial](https://docs.m5stack.com/en/arduino/m5atoms3r-m12/program).
 2. Open [`ino/AtomS3R_CSI_STA/AtomS3R_CSI_STA.ino`](ino/AtomS3R_CSI_STA/AtomS3R_CSI_STA.ino).
-3. Copy `secrets.example.h` to `secrets.h` in the same directory, then enter your SSID and password. This demo's `.gitignore` excludes `secrets.h`.
-4. Use a **2.4 GHz personal Wi-Fi network with an SSID and password**. The sketch does not implement eduroam / WPA2-Enterprise authentication. A lab router or a phone hotspot configured for 2.4 GHz is suitable.
+3. Copy [`secrets.example.h`](ino/AtomS3R_CSI_STA/secrets.example.h) to `secrets.h` in the same directory, then enter your credentials using the settings below. This demo's `.gitignore` excludes `secrets.h`; keep real credentials out of `secrets.example.h`.
+4. Use **2.4 GHz Wi-Fi**: eduroam with WPA2-Enterprise / PEAP, or a personal network such as a lab router or phone hotspot.
 5. Select these Arduino IDE settings:
 
    | Option | Setting |
@@ -34,6 +34,23 @@ CSI flows from the **board to the computer** over serial. Uploading the Arduino 
 7. Open Serial Monitor at **921600 baud** and press Reset. Expect a `# connected ...` message followed by continuous `CSI_DATA,...` lines.
 
 The sketch uses Arduino WiFi, the ESP-IDF Wi-Fi / ping APIs, and FreeRTOS included in the board package. No additional M5Unified or CSI library is required. Native USB CDC is not limited by a physical UART baud rate, but use 921600 consistently in the serial tools.
+
+### Wi-Fi credentials
+
+The example defaults to **eduroam / PEAP with MSCHAPv2**, using the same [Arduino enterprise Wi-Fi API](https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/examples/WiFiClientEnterprise/WiFiClientEnterprise.ino) as the IMU lab. In `secrets.h`, set:
+
+```cpp
+#define WIFI_SSID      "eduroam"
+#define EAP_USERNAME   "your-username@your-university.edu"
+#define EAP_IDENTITY   EAP_USERNAME
+#define EAP_PASSWORD   "your-password"
+#define WIFI_PASSWORD  ""  // Unused for eduroam.
+#define EAP_CA_CERT    ""  // Replace with your campus RADIUS CA certificate in PEM format.
+```
+
+Use the username (including its university realm) and outer identity specified by campus IT. `EAP_IDENTITY` defaults to the username; replace it if your campus specifies an anonymous outer identity. `EAP_CA_CERT` accepts a PEM certificate, with an example in the header. Leaving it empty disables server certificate verification and prints a warning; configure your campus CA when using real credentials. This setup implements PEAP with a username/password, not EAP-TLS client certificates or other campus-specific EAP methods.
+
+For **personal Wi-Fi**, set `EAP_USERNAME` to `""`, change `WIFI_SSID`, and set `WIFI_PASSWORD`. The other EAP settings are ignored. Existing `secrets.h` files containing only `WIFI_SSID` and `WIFI_PASSWORD` still work. Recompile and upload after changing credentials.
 
 ## 2. Output Format
 
@@ -133,7 +150,7 @@ Validation: six automated tests passed, covering real/imaginary ordering, invali
 
 ## 4. Configuration and Troubleshooting
 
-- **Wi-Fi connection fails:** Check `secrets.h`, 2.4 GHz coverage, and the authentication type. The sketch retries every 15 seconds and updates the BSSID and gateway ping session after reconnection or AP roaming.
+- **Wi-Fi connection fails:** Check `secrets.h`, 2.4 GHz coverage, and the authentication type. For eduroam, check the full username/realm, outer identity, password, CA certificate, and that your campus supports PEAP/MSCHAPv2. For personal Wi-Fi, keep `EAP_USERNAME` empty. The sketch retries every 15 seconds and updates the BSSID and gateway ping session after reconnection or AP roaming.
 - **Connected but no CSI:** Inspect the cumulative `ping_ok` and `ping_timeout` counters printed every five seconds. If only timeouts increase, the router may block ping. Run `ping BOARD_IP` from a computer on the same LAN to generate incoming traffic, or try an AP that permits ping. Client isolation may also prevent the computer from reaching the board.
 - **Ping works but no CSI:** Confirm the ESP32-S3 target, a CSI-enabled board package, and an AP configured for 802.11g/n OFDM traffic. Not every received Wi-Fi frame produces CSI.
 - **CSI is disabled in the SDK:** The M5Stack 3.3.9 SDK installed on the development machine enables CSI. Use that version or check `CONFIG_ESP_WIFI_CSI_ENABLED` in your SDK. Adding a `#define` in the sketch cannot enable a feature missing from the precompiled Wi-Fi library.

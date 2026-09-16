@@ -20,6 +20,20 @@
 #include "secrets.example.h"
 #endif
 
+// Keep existing personal-Wi-Fi secrets.h files working without EAP settings.
+#ifndef EAP_USERNAME
+#define EAP_USERNAME ""
+#endif
+#ifndef EAP_IDENTITY
+#define EAP_IDENTITY EAP_USERNAME
+#endif
+#ifndef EAP_PASSWORD
+#define EAP_PASSWORD ""
+#endif
+#ifndef EAP_CA_CERT
+#define EAP_CA_CERT ""
+#endif
+
 constexpr uint32_t SERIAL_BAUD = 921600;
 constexpr uint32_t PING_INTERVAL_MS = 50;  // Target 20 packets/s, not a guaranteed CSI rate.
 constexpr size_t MAX_CSI_BYTES = 640;
@@ -147,8 +161,16 @@ void setup() {
   while (!Serial && millis() - start < 3000) delay(10);
   Serial.println("# AtomS3R CSI: STA receive, HT20, LLTF only, USB CSV");
   Serial.println("type,seq,timestamp_us,mac,rssi,noise_floor,channel,sig_mode,mcs,cwb,len,first_word_invalid,data");
-  if (strcmp(WIFI_SSID, "YOUR_2G4_SSID") == 0) {
+  if (!WIFI_SSID[0] || strcmp(WIFI_SSID, "YOUR_2G4_SSID") == 0 ||
+      strcmp(WIFI_SSID, "your-ssid") == 0) {
     Serial.println("# Copy secrets.example.h to secrets.h and set your Wi-Fi credentials.");
+    while (true) delay(1000);
+  }
+  // Check for missing or placeholder EAP credentials. If EAP_USERNAME is empty, assume personal Wi-Fi.
+  if (EAP_USERNAME[0] && (!EAP_IDENTITY[0] || !EAP_PASSWORD[0] ||
+      strcmp(EAP_USERNAME, "your-username@your-university.edu") == 0 ||
+      strcmp(EAP_PASSWORD, "your-password") == 0)) {
+    Serial.println("# Set EAP_IDENTITY, EAP_USERNAME and EAP_PASSWORD in secrets.h.");
     while (true) delay(1000);
   }
   samples = xQueueCreate(QUEUE_DEPTH, sizeof(CsiSample));
@@ -171,7 +193,20 @@ void setup() {
   requireOk(esp_wifi_set_csi_rx_cb(onCsi, nullptr), "CSI callback");
   requireOk(esp_wifi_set_csi(true), "CSI enable");
   // No promiscuous mode: only receive through the associated STA interface.
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  if (EAP_USERNAME[0]) {
+#if CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
+    Serial.println("# Connecting with WPA2-Enterprise / PEAP (eduroam)");
+    const char *ca = EAP_CA_CERT[0] ? EAP_CA_CERT : nullptr;
+    if (!ca) Serial.println("# WARNING: EAP_CA_CERT is empty; server certificate verification is disabled.");
+    WiFi.begin(WIFI_SSID, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD, ca);
+#else
+    Serial.println("# FATAL: this board package was built without WPA2-Enterprise support.");
+    while (true) delay(1000);
+#endif
+  } else {
+    Serial.println("# Connecting with personal Wi-Fi");
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  }
 }
 
 void loop() {
@@ -196,7 +231,7 @@ void loop() {
       connected = false;
       if (now - lastRetry >= 15000) {
         lastRetry = now;
-        Serial.println("# Retrying Wi-Fi; check SSID/password and 2.4 GHz coverage");
+        Serial.println("# Retrying Wi-Fi; check SSID, credentials, EAP settings and 2.4 GHz coverage");
         WiFi.reconnect();
       }
     }
