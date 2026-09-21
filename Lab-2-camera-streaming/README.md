@@ -2,6 +2,8 @@
 
 This repository contains the labs for the AIoT course. Start with [Lab 1: Camera Streaming](#lab-1-camera-streaming).
 
+For the basic M12 camera experiment on ordinary Wi-Fi, use **[Camera](Camera/README.md)**. It serves HTTP video directly from the board. The main instructions below cover the separate eduroam relay experiment.
+
 ## Lab 1: Camera Streaming
 
 ### Goal
@@ -70,11 +72,11 @@ Choose the sketch for your hardware and streaming method:
 
 | Sketch | Default hardware | Where to view the video |
 | --- | --- | --- |
-| [`camera_edurom`](camera_edurom/camera_edurom.ino) | AtomS3R-M12 | The camera's IP address in a browser |
+| [`Camera`](Camera/Camera.ino) | AtomS3R-M12, ordinary Wi-Fi | Direct HTTP at the camera's IP address |
 | [`camera_edurom_relay`](camera_edurom_relay/camera_edurom_relay.ino) | AtomS3R-CAM (instructor's device) | The relay server's dashboard |
 | [`camera_edurom_relay_m12`](camera_edurom_relay_m12/camera_edurom_relay_m12.ino) | AtomS3R-M12 (student devices) | The relay server's dashboard |
 
-Each sketch folder has its own local `secrets.h`; follow step 5 for whichever sketch you use. For the student relay version, also follow [Relay streaming with the student M12](#relay-streaming-with-the-student-m12) below. Keep the sketches in separate folders so Arduino IDE builds one version at a time.
+Each sketch folder has its own local `secrets.h`. For `Camera`, follow its [ordinary Wi-Fi setup](Camera/README.md). For either eduroam relay sketch, follow step 5 below. For the student relay version, also follow [Relay streaming with the student M12](#relay-streaming-with-the-student-m12) below. Keep the sketches in separate folders so Arduino IDE builds one version at a time.
 
 For the student `camera_edurom_relay_m12` sketch, keep these camera settings unchanged:
 
@@ -86,6 +88,8 @@ For the student `camera_edurom_relay_m12` sketch, keep these camera settings unc
 They select the AtomS3R-M12's OV3660 camera. The `CAM` option targets the older GC0308-based AtomS3R-CAM and should remain commented out for the course hardware. Enable exactly one camera model.
 
 ### 5. Configure your local Wi-Fi credentials
+
+The following settings are for the eduroam relay sketches. `Camera` uses only `WIFI_SSID` and `WIFI_PASSWORD`; see its [setup guide](Camera/README.md).
 
 1. In the sketch folder you selected, copy `secrets.example.h` to `secrets.h`.
 2. Open `secrets.h` and replace the placeholder identity, username, and password with your own credentials.
@@ -192,7 +196,7 @@ Submit the items required by your instructor. Unless told otherwise, keep these 
 2. Copy the folder's `secrets.example.h` to `secrets.h` and fill in your eduroam credentials. The existing `.gitignore` also excludes this new folder's `secrets.h`.
 3. Set `RELAY_UPLOAD_URL` in your local `secrets.h` to `http://<SERVER_IP_FROM_CLASS>:8001/upload`, replacing the placeholder with the server IP provided in class. The sketch loads `uploadUrl` from this setting; the repository does not publish the server IP.
 4. Give `deviceId` a unique value, such as `atoms3r-m12-01` or `atoms3r-m12-02`. Cameras using the same ID overwrite each other's latest frame on the server.
-5. Keep `USE_ATOMS3R_M12` enabled and `USE_ATOMS3R_CAM` commented out. The camera configuration matches the first `camera_edurom` experiment: JPEG output, UXGA resolution, JPEG quality 12, and two frame buffers in PSRAM. The M12 uploads the camera's JPEG buffer directly and returns it to the camera driver after the upload.
+5. Keep `USE_ATOMS3R_M12` enabled and `USE_ATOMS3R_CAM` commented out. The camera configuration matches the `Camera` experiment: JPEG output, UXGA resolution, JPEG quality 12, and two frame buffers in PSRAM. The M12 uploads the camera's JPEG buffer directly and returns it to the camera driver after the upload.
 6. Compile and upload, then open Serial Monitor at **115200 baud**. Look for `Camera Init Success`, `eduroam connected!`, and successful `HTTP response: 200` messages.
 7. The instructor runs [`server-camera.py`](server-camera.py) on the server. Open `http://<SERVER_IP_FROM_CLASS>:8001/`, using the address provided in class, and find your camera's `deviceId` on the dashboard. The camera must be able to reach the server on port 8001.
 
@@ -200,7 +204,7 @@ This is a separate M12 preset; the original `camera_edurom_relay` remains config
 
 ### Direct streaming reference
 
-The original [`camera_edurom`](camera_edurom/camera_edurom.ino) sketch hosts a stream on the camera itself. On a network that permits direct connections between client devices, open `http://<CAMERA_IP>/` using the camera's IP from Serial Monitor. Keep `STA_MODE` enabled for that sketch. For the classroom eduroam experiment, use the M12 relay workflow above.
+The [`Camera`](Camera/Camera.ino) sketch is the basic M12 version: ordinary Wi-Fi and a direct HTTP stream on port 80. Set `WIFI_SSID` and `WIFI_PASSWORD` in local `secrets.h`, upload, and open `http://<CAMERA_IP>/` using the URL printed in Serial Monitor. Follow the [Camera setup guide](Camera/README.md). It does not require eduroam or a relay server.
 
 ### References
 

@@ -28,7 +28,7 @@
 // Hardware selection
 // ============================================================
 
-// Student hardware: AtomS3R-M12 (OV3660), matching camera_edurom.
+// Student hardware: AtomS3R-M12 (OV3660), matching Camera.
 // #define USE_ATOMS3R_CAM
 #define USE_ATOMS3R_M12
 

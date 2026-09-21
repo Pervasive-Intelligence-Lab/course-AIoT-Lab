@@ -5,7 +5,7 @@
  */
 
 /**
- * @Hardwares: AtomS3R-CAM / AtomS3R-M12
+ * @Hardwares: AtomS3R-M12
  * @Platform Version: Arduino M5Stack Board Manager v2.1.4
  */
 
@@ -15,21 +15,10 @@
 #include <WiFi.h>
 #include "esp_camera.h"
 
-// The course hardware is AtomS3R-M12 (OV3660). Enable exactly one model.
-// #define USE_ATOMS3R_CAM
-#define USE_ATOMS3R_M12
-
-#if defined(USE_ATOMS3R_CAM) == defined(USE_ATOMS3R_M12)
-#error "Enable exactly one camera model: USE_ATOMS3R_CAM or USE_ATOMS3R_M12"
-#endif
-
-#define STA_MODE
-// #define AP_MODE
-
-const char* ssid         = WIFI_SSID;
-const char* identity     = EAP_IDENTITY;
-const char* username     = EAP_USERNAME;
-const char* password     = EAP_PASSWORD;
+// AtomS3R-M12 (OV3660): native JPEG, streamed directly over HTTP.
+// Configure an ordinary Wi-Fi network in your local secrets.h.
+const char* ssid     = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
 
 WiFiServer server(80);
 camera_fb_t* fb    = NULL;
@@ -61,15 +50,9 @@ static camera_config_t camera_config = {
     .ledc_timer   = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,
 
-#ifdef USE_ATOMS3R_CAM
-    .pixel_format = PIXFORMAT_RGB565,
-    .frame_size   = FRAMESIZE_QVGA,
-#endif
 
-#ifdef USE_ATOMS3R_M12
     .pixel_format = PIXFORMAT_JPEG,
     .frame_size   = FRAMESIZE_UXGA,
-#endif
 
     .jpeg_quality  = 12,
     .fb_count      = 2,
@@ -94,85 +77,33 @@ void setup()
     }
     delay(100);
 
-#ifdef STA_MODE
-
     WiFi.mode(WIFI_STA);
-    WiFi.disconnect(true);
-    delay(500);
-
+    WiFi.begin(ssid, password);
     WiFi.setSleep(false);
 
-    Serial.println("");
+    Serial.println();
     Serial.print("Connecting to ");
     Serial.println(ssid);
 
-    // WPA2-Enterprise / PEAP
-    WiFi.begin(
-        ssid,
-        WPA2_AUTH_PEAP,
-        identity,
-        username,
-        password
-    );
-
     unsigned long startTime = millis();
-
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
-
-        // 30-second timeout
         if (millis() - startTime > 30000) {
             Serial.println();
-            Serial.println("Failed to connect to eduroam");
-            Serial.print("WiFi status: ");
-            Serial.println(WiFi.status());
+            Serial.println("Wi-Fi connection timed out. Check secrets.h and reset the board.");
             return;
         }
     }
 
-    Serial.println("");
+    Serial.println();
     Serial.print("Connected to ");
     Serial.println(ssid);
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
-    Serial.print("RSSI: ");
-    Serial.println(WiFi.RSSI());
-
-    // WiFi.mode(WIFI_STA);
-    // WiFi.begin(ssid, password);
-    // WiFi.setSleep(false);
-    // Serial.println("");
-
-    // Serial.print("Connecting to ");
-    // Serial.println(ssid);
-
-    // // Wait for connection
-    // while (WiFi.status() != WL_CONNECTED) {
-    //     delay(500);
-    //     Serial.print(".");
-    // }
-
-    // Serial.println("");
-    // Serial.print("Connected to ");
-    // Serial.println(ssid);
-    // Serial.print("IP address: ");
-    // Serial.println(WiFi.localIP());
-#endif
-
-#ifdef AP_MODE
-    if (!WiFi.softAP(ssid, password)) {
-        log_e("Soft AP creation failed.");
-        while (1);
-    }
-
-    Serial.println("AP SSID:");
-    Serial.println(ssid);
-
-    IPAddress IP = WiFi.softAPIP();
-    Serial.print("AP IP address: ");
-    Serial.println(IP);
-#endif
+    Serial.print("Open in your browser: http://");
+    Serial.print(WiFi.localIP());
+    Serial.println("/");
 
     server.begin();
 }
@@ -200,7 +131,7 @@ static const char* _STREAM_PART         = "Content-Type: image/jpeg\r\nContent-L
 
 static void jpegStream(WiFiClient* client)
 {
-    Serial.println("Image stream satrt");
+    Serial.println("Image stream start");
     client->println("HTTP/1.1 200 OK");
     client->printf("Content-Type: %s\r\n", _STREAM_CONTENT_TYPE);
     client->println("Content-Disposition: inline; filename=capture.jpg");
@@ -214,14 +145,9 @@ static void jpegStream(WiFiClient* client)
     for (;;) {
         fb = esp_camera_fb_get();
         if (fb) {
-#ifdef USE_ATOMS3R_CAM
-            frame2jpg(fb, 255, &out_jpg, &out_jpg_len);
-#endif
 
-#ifdef USE_ATOMS3R_M12
             out_jpg     = fb->buf;
             out_jpg_len = fb->len;
-#endif
 
             Serial.printf("pic size: %d\n", out_jpg_len);
             client->print(_STREAM_BOUNDARY);
@@ -250,13 +176,6 @@ static void jpegStream(WiFiClient* client)
                 esp_camera_fb_return(fb);
                 fb = NULL;
             }
-#ifdef USE_ATOMS3R_CAM
-            if (out_jpg) {
-                free(out_jpg);
-                out_jpg     = NULL;
-                out_jpg_len = 0;
-            }
-#endif
         } else {
             Serial.println("Camera capture failed");
         }
@@ -267,13 +186,6 @@ client_exit:
         esp_camera_fb_return(fb);
         fb = NULL;
     }
-#ifdef USE_ATOMS3R_CAM
-    if (out_jpg) {
-        free(out_jpg);
-        out_jpg     = NULL;
-        out_jpg_len = 0;
-    }
-#endif
     client->stop();
     Serial.printf("Image stream end\r\n");
 }

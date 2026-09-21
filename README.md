@@ -212,9 +212,11 @@ course-AIoT-Lab/
 │   ├── imu-compass.py
 │   └── imu-compass-3d.py
 │
-├── Lab-1-camera-streaming/
+├── Lab-2-camera-streaming/
 │   ├── README.md
-│   └── camera_edurom/
+│   ├── Camera/
+│   ├── camera_edurom_relay/
+│   └── camera_edurom_relay_m12/
 │
 └── Lab-2-ESP-Claw/
     └── README.md
