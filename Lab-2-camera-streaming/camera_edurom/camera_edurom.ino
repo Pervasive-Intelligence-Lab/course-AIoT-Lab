@@ -10,6 +10,8 @@
  */
 
 #include "camera_pins.h"
+// Copy secrets.example.h to secrets.h in this folder before compiling.
+#include "secrets.h"
 #include <WiFi.h>
 #include "esp_camera.h"
 
@@ -24,10 +26,10 @@
 #define STA_MODE
 // #define AP_MODE
 
-const char* ssid     = "eduroam";
-const char* identity = "your_UGA_ID";  // e.g., "xxxxxxx"
-const char* username = "your_UGA_ID"; 
-const char* password = "your_UGA_password";  // e.g., "xxxxxxx"
+const char* ssid         = WIFI_SSID;
+const char* identity     = EAP_IDENTITY;
+const char* username     = EAP_USERNAME;
+const char* password     = EAP_PASSWORD;
 
 WiFiServer server(80);
 camera_fb_t* fb    = NULL;
@@ -166,8 +168,6 @@ void setup()
 
     Serial.println("AP SSID:");
     Serial.println(ssid);
-    Serial.println("AP PASSWORD:");
-    Serial.println(password);
 
     IPAddress IP = WiFi.softAPIP();
     Serial.print("AP IP address: ");
