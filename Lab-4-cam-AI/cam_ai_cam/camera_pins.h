@@ -1,7 +1,8 @@
 #ifndef _M5_ATOM_S3R_CAM_H_
 #define _M5_ATOM_S3R_CAM_H_
 
-// AtomS3R-CAM / AtomS3R-M12 camera pins (same as the M5AtomS3 "camera" example)
+// AtomS3R-CAM (GC0308) camera pins, same as the M5AtomS3 "camera" example
+// and docs.m5stack.com/en/core/AtomS3R-CAM
 
 #define PWDN_GPIO_NUM  -1
 #define RESET_GPIO_NUM -1

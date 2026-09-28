@@ -4,6 +4,5 @@
   "LLM_MODEL": "gemma4:26b-a4b",
   "MAX_LLM_PER_MINUTE": 50,
   "AUTO_DESCRIBE_INTERVAL_S": 10,
-  "TTS_PROVIDER": "none",
   "PORT": 8001
 }

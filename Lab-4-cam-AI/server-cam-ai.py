@@ -1,17 +1,15 @@
 """
 Lab 4 - AI Camera server
 
-    AtomS3R-CAM --Wi-Fi/eduroam--> this server --> Vision LLM
-                                        |
-                                        +--> web dashboard (image + description)
-                                        +--> optional speech for the Atomic Voice Base
+    AtomS3R-CAM / M12 --Wi-Fi/eduroam--> this server --> Vision LLM
+                                              |
+                                              +--> web dashboard (image + description)
 
 This is the Lab 2 relay server (server-camera.py) extended with:
   * a vision-LLM call that turns each uploaded photo into a one-sentence description
   * a dashboard that shows every camera, its latest image and the description
-  * an optional text-to-speech endpoint so the board can say the description
 
-Configuration uses environment variables (see README.md). By default it uses
+Configuration comes from config.json or environment variables (see README.md). By default it uses
 Purdue AnvilGPT (OpenAI-compatible API, vision model gemma4:26b-a4b):
 
     pip install -r requirements.txt
@@ -22,18 +20,12 @@ Purdue AnvilGPT (OpenAI-compatible API, vision model gemma4:26b-a4b):
     open http://<SERVER_IP>:8001/
 """
 
-import array
 import base64
-import io
 import json
 import os
-import shutil
 import sys
-import subprocess
-import tempfile
 import threading
 import time
-import wave
 from collections import deque
 
 import requests
@@ -114,22 +106,6 @@ PROMPT = setting(
 # every AUTO_DESCRIBE_INTERVAL_S seconds. Set to 0 to disable.
 AUTO_DESCRIBE_INTERVAL_S = float(setting("AUTO_DESCRIBE_INTERVAL_S", "10"))
 
-# none   : no speech; the board plays a chime instead
-# openai : OpenAI-compatible /audio/speech. Default: AnvilGPT
-#          (https://anvilgpt.rcac.purdue.edu/api/v1/audio/speech).
-#          MP3 or other compressed replies are decoded with ffmpeg.
-# say    : macOS built-in "say" command (offline, free)
-# espeak : espeak-ng / espeak command (offline, free, Linux)
-TTS_PROVIDER = setting("TTS_PROVIDER", "none").lower()
-TTS_BASE_URL = setting(
-    "TTS_BASE_URL", "https://anvilgpt.rcac.purdue.edu/api/v1").rstrip("/")
-TTS_MODEL = setting("TTS_MODEL", "")   # empty = server default
-TTS_VOICE = setting("TTS_VOICE", "")   # empty = server default
-TTS_API_KEY = setting("TTS_API_KEY") or LLM_API_KEY
-
-# The Atomic Voice Base firmware plays 16 kHz, 16-bit, mono PCM.
-SPEECH_SAMPLE_RATE = 16000
-
 # A camera is "online" if it uploaded within this many seconds. AI cameras
 # send one photo every few seconds, streaming cameras several per second.
 ONLINE_TIMEOUT_S = 5
@@ -142,7 +118,6 @@ lock = threading.Lock()
 
 frames = {}    # device_id -> latest JPEG bytes
 cameras = {}   # device_id -> metadata + latest description
-speech_cache = {}  # device_id -> (description_seq, pcm_bytes)
 llm_calls = deque()  # timestamps of recent LLM requests (rate limit)
 
 
@@ -271,114 +246,6 @@ def background_describer():
 
 
 # ============================================================
-# Text-to-speech (optional, for the Atomic Voice Base)
-# ============================================================
-
-def resample_pcm16(pcm, src_rate, dst_rate=SPEECH_SAMPLE_RATE):
-    """Linear-interpolation resampler for mono 16-bit PCM (standard library only)."""
-
-    src = array.array("h")
-    src.frombytes(pcm[: len(pcm) // 2 * 2])
-
-    if src_rate == dst_rate or len(src) < 2:
-        return src.tobytes()
-
-    n_out = int(len(src) * dst_rate / src_rate)
-    out = array.array("h", bytes(2 * n_out))
-    step = src_rate / dst_rate
-    last = len(src) - 1
-
-    for i in range(n_out):
-        pos = i * step
-        j = int(pos)
-        if j >= last:
-            out[i] = src[last]
-        else:
-            frac = pos - j
-            out[i] = int(src[j] + (src[j + 1] - src[j]) * frac)
-
-    return out.tobytes()
-
-
-def wav_to_pcm16_mono(wav_bytes):
-    with wave.open(io.BytesIO(wav_bytes)) as w:
-        if w.getsampwidth() != 2:
-            raise RuntimeError("TTS WAV must be 16-bit")
-        rate, channels = w.getframerate(), w.getnchannels()
-        data = w.readframes(w.getnframes())
-
-    if channels > 1:  # keep the first channel
-        s = array.array("h")
-        s.frombytes(data)
-        data = s[::channels].tobytes()
-
-    return resample_pcm16(data, rate)
-
-
-def decode_audio(data):
-    """Any audio file (WAV, MP3, ...) -> 16 kHz mono PCM. Non-WAV needs ffmpeg."""
-
-    if data[:4] == b"RIFF":
-        return wav_to_pcm16_mono(data)
-
-    ffmpeg = shutil.which("ffmpeg")
-    if not ffmpeg:
-        raise RuntimeError("TTS returned compressed audio; install ffmpeg to decode it")
-
-    out = subprocess.run(
-        [ffmpeg, "-loglevel", "error", "-i", "pipe:0",
-         "-f", "s16le", "-ac", "1", "-ar", str(SPEECH_SAMPLE_RATE), "pipe:1"],
-        input=data, capture_output=True, check=True, timeout=30,
-    )
-    return out.stdout
-
-
-def synthesize_speech(text):
-    """Return 16 kHz, 16-bit, mono PCM for text, or None if TTS is disabled."""
-
-    if TTS_PROVIDER == "openai":
-        body = {"input": text, "response_format": "wav"}
-        if TTS_MODEL:
-            body["model"] = TTS_MODEL
-        if TTS_VOICE:
-            body["voice"] = TTS_VOICE
-        r = requests.post(
-            f"{TTS_BASE_URL}/audio/speech",
-            headers={"Authorization": f"Bearer {TTS_API_KEY}"},
-            json=body,
-            timeout=LLM_TIMEOUT_S,
-        )
-        r.raise_for_status()
-        return decode_audio(r.content)
-
-    if TTS_PROVIDER in ("say", "espeak"):
-        with tempfile.TemporaryDirectory() as tmp:
-            if TTS_PROVIDER == "say":
-                path = os.path.join(tmp, "speech.wav")
-                cmd = ["say", "-o", path, "--data-format=LEI16@16000", text]
-            else:
-                exe = shutil.which("espeak-ng") or shutil.which("espeak") or "espeak-ng"
-                path = os.path.join(tmp, "speech.wav")
-                cmd = [exe, "-w", path, text]
-            subprocess.run(cmd, check=True, timeout=30,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            with open(path, "rb") as f:
-                return wav_to_pcm16_mono(f.read())
-
-    return None
-
-
-def pcm_to_wav(pcm, rate=SPEECH_SAMPLE_RATE):
-    buf = io.BytesIO()
-    with wave.open(buf, "wb") as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(rate)
-        w.writeframes(pcm)
-    return buf.getvalue()
-
-
-# ============================================================
 # Camera upload
 # ============================================================
 
@@ -444,58 +311,8 @@ def upload():
     return Response(
         text,
         content_type="text/plain; charset=utf-8",
-        headers={
-            "X-Frame-Seq": str(seq),
-            "X-Speech-Available": "1" if TTS_PROVIDER != "none" else "0",
-        },
+        headers={"X-Frame-Seq": str(seq)},
     )
-
-
-# ============================================================
-# Speech for the board
-# ============================================================
-
-def speech_for(device_id):
-    with lock:
-        cam = cameras.get(device_id)
-        if not cam or not cam["description"]:
-            return None
-        seq, text = cam["description_seq"], cam["description"]
-        cached = speech_cache.get(device_id)
-
-    if cached and cached[0] == seq:
-        return cached[1]
-
-    pcm = synthesize_speech(text)
-    if pcm is not None:
-        with lock:
-            speech_cache[device_id] = (seq, pcm)
-    return pcm
-
-
-@app.route("/api/speech/<device_id>")
-def speech(device_id):
-    """
-    Latest description as speech.
-      default      : raw PCM, 16 kHz, 16-bit, mono (for the Atomic Voice Base)
-      ?format=wav  : WAV file (for a browser or for debugging)
-    204 when TTS is disabled or there is no description yet.
-    """
-
-    try:
-        pcm = speech_for(device_id)
-    except Exception as e:
-        print(f"[TTS] {device_id} failed: {e}")
-        return Response(f"TTS failed: {e}", status=502, mimetype="text/plain")
-
-    if pcm is None:
-        return "", 204
-
-    if request.args.get("format") == "wav":
-        return Response(pcm_to_wav(pcm), mimetype="audio/wav")
-
-    return Response(pcm, mimetype="application/octet-stream",
-                    headers={"X-Sample-Rate": str(SPEECH_SAMPLE_RATE)})
 
 
 # ============================================================
@@ -531,7 +348,6 @@ def camera_list():
     return jsonify({
         "model": "mock" if LLM_PROVIDER == "mock"
                  else f"{LLM_MODEL} @ {LLM_BASE_URL.split('//')[-1].split('/')[0]}",
-        "tts": TTS_PROVIDER,
         "cameras": result,
     })
 
@@ -761,7 +577,6 @@ if __name__ == "__main__":
     print(f"Config: {CONFIG_PATH}" + ("" if CONFIG else "  (not found, using defaults/environment)"))
     print(f"LLM : {LLM_PROVIDER} / {LLM_MODEL} @ {LLM_BASE_URL}"
           + ("" if LLM_API_KEY or LLM_PROVIDER == "mock" else "  (no API key set)"))
-    print(f"TTS : {TTS_PROVIDER}")
     print(f"Auto-describe streaming cameras every {AUTO_DESCRIBE_INTERVAL_S:g}s"
           if AUTO_DESCRIBE_INTERVAL_S > 0 else "Auto-describe disabled")
     print("=" * 60)
