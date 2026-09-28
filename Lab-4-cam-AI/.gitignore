@@ -1,0 +1,7 @@
+# Local Wi-Fi credentials and server address in the Arduino sketch folder
+secrets.h
+# Server config with the AnvilGPT API key
+config.json
+.env
+.venv/
+__pycache__/
