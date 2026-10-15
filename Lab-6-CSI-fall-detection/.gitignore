@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+figures/
+data/esp32_sim/
+data/my_captures/
+captures/

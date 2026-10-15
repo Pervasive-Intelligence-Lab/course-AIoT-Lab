@@ -175,6 +175,31 @@ sense → understand → reason → communicate → act
 
 ---
 
+### Lab 6 — Practical Wi-Fi Sensing: CSI Fall Detection
+
+📁 [`Lab-6-CSI-fall-detection`](Lab-6-CSI-fall-detection)
+
+Companion to Lecture 11. A Jupyter notebook that first runs the Tsinghua *Hands-on Wireless Sensing* examples (CSI features and sanitization) in Python, then builds a fall detector from AtomS3R-M12 CSI recorded with Lab 3.
+
+You will:
+
+* Decode Lab 3 CSI records into 52 subcarriers
+* Clean the data (AGC normalization, outlier filtering, resampling)
+* Estimate motion, presence, and body speed from the CSI autocorrelation
+* Build and evaluate a fall-detection state machine, then test it on your own recordings
+
+```text
+AtomS3R CSI (Lab 3)
+        ↓
+  Clean amplitude
+        ↓
+Motion · Presence · Speed
+        ↓
+  Fall detector
+```
+
+---
+
 ## Course Demos
 
 ### AtomS3R-M12 Wi-Fi CSI over USB Serial
