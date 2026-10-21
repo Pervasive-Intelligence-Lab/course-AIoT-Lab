@@ -1,1 +1,19 @@
 .DS_Store
+
+# Local Python environments (each student creates their own)
+.venv/
+venv/
+env/
+.conda/
+
+# Python and Jupyter caches
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Local environment settings; keep distributable examples
+.env
+.env.*
+!.env.example
+!.env.template

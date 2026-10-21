@@ -1,0 +1,4 @@
+# Environment and cache rules are inherited from the repository .gitignore.
+figures/
+data/uw/pms1000_30fs.mat
+*.tmp

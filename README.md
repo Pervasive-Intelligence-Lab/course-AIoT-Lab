@@ -200,6 +200,23 @@ Motion · Presence · Speed
 
 ---
 
+### Lab 7 — mmWave Radar: Range, Doppler, Angular Spectra, and STFT
+
+📁 [`Lab-7-mmWave`](Lab-7-mmWave)
+
+Two standalone English Jupyter notebooks: [simulation](Lab-7-mmWave/lab7_mmwave_simulation.ipynb), followed by [real radar data](Lab-7-mmWave/lab7_mmwave_real_data.ipynb). Students first process targets with known range, velocity, and angle, then repeat the pipeline on a bundled real 77 GHz ADC/IQ frame from Gao et al.'s public radar dataset. An STFT lesson uses a bundled 30-frame single-channel sequence to compare short and long windows on a time–Doppler spectrogram. No radar hardware is required; students set up their Python environment before class.
+
+You will:
+
+* Understand fast time, slow time, and the antenna dimension of a radar data cube
+* Compute range, Doppler, and angular spectra with explicit FFT steps
+* Compare windowing, zero-padding, static clutter removal, and array aperture
+* Visualize range–Doppler and range–angle maps, then explore resolution and aliasing
+
+Both notebooks include saved figures and classroom questions. Longer experiments are optional appendices, and the real measurements include reproducible data provenance.
+
+---
+
 ## Course Demos
 
 ### AtomS3R-M12 Wi-Fi CSI over USB Serial
